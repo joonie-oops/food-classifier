@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Food Image Classifier</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 1rem;
+        margin: 2rem 0;
+      }
+
+      .result-box {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        min-height: 100px;
+        font-size: 1.25rem;
+      }
+
+      .loading {
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .processing {
+        animation: pulse 2s infinite;
+        background: #e9ecef;
+        transition: background-color 0.3s ease;
+      }
+
+      .confidence {
+        color: #666;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <div class="container">
+      <h1 class="text-4xl font-bold text-gray-800 mb-8">
+        Food Image Classifier
+      </h1>
+
+      <div class="input-group">
+        <input
+          type="text"
+          id="imageUrl"
+          placeholder="Enter food image URL"
+          class="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          onclick="classifyImage()"
+          class="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+          id="classifyBtn"
+        >
+          Classify
+        </button>
+      </div>
+
+      <div id="result" class="result-box text-gray-700">
+        <div id="prediction"></div>
+        <div id="confidence" class="confidence"></div>
+      </div>
+    </div>
+
+    <script>
+      async function classifyImage() {
+        const imageUrl = document.getElementById("imageUrl").value;
+        const predictionDiv = document.getElementById("prediction");
+        const confidenceDiv = document.getElementById("confidence");
+        const resultDiv = document.getElementById("result");
+        const button = document.getElementById("classifyBtn");
+
+        if (!imageUrl) {
+          predictionDiv.textContent = "Please enter an image URL";
+          confidenceDiv.textContent = "";
+          return;
+        }
+
+        try {
+          button.classList.add("loading");
+          predictionDiv.textContent = "Analyzing your food image...";
+          confidenceDiv.textContent = "";
+          resultDiv.classList.add("processing");
+
+          const response = await fetch("/classify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ imageUrl }),
+          });
+
+          const data = await response.json();
+          predictionDiv.textContent = data.message;
+          confidenceDiv.textContent = data.confidence;
+        } catch (error) {
+          predictionDiv.textContent = "Oops! Something went wrong.";
+          confidenceDiv.textContent = "";
+        } finally {
+          button.classList.remove("loading");
+          resultDiv.classList.remove("processing");
+        }
+      }
+
+      document.getElementById("imageUrl").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          classifyImage();
+        }
+      });
+    </script>
+  </body>
+</html>
